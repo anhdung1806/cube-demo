@@ -1,0 +1,96 @@
+---
+title: Axes
+description: Configure axis titles, grid lines, label formatting, dual Y-axis, and reference lines.
+---
+
+The **Axes** section in the Style tab controls the appearance and behavior of the X axis and Y axis (or left and right Y axes in dual-axis charts). Most axis settings are available for all Vega-based chart types (bar, line, area, scatter, heatmap).
+
+{/* TODO screenshot: axes configuration panel open in Style tab (hidden — replace this comment with <Frame><img src="..." /></Frame> when image is ready) */}
+
+## X axis
+
+| Setting | Description |
+|---|---|
+| **Show axis** | Toggle the X axis on or off |
+| **Title** | Custom axis label — leave blank to hide the axis title |
+| **Grid lines** | Toggle grid lines perpendicular to the X axis |
+| **Labels** | Toggle axis tick labels |
+| **Label angle** | Rotate axis labels (useful for long category names) |
+| **Label format** | Number or date format applied to axis labels |
+
+## Y axis (left)
+
+| Setting | Description |
+|---|---|
+| **Show axis** | Toggle the Y axis on or off |
+| **Title** | Custom axis label |
+| **Grid lines** | Toggle horizontal grid lines |
+| **Labels** | Toggle axis tick labels |
+| **Label format** | Number format applied to axis labels (e.g. `$,.0f` for currency) |
+| **Min / Max** | Override the axis scale minimum and maximum values |
+
+{/* TODO screenshot: Y-axis settings panel with title and grid controls (hidden — replace this comment with <Frame><img src="..." /></Frame> when image is ready) */}
+
+## Dual Y axis (right axis)
+
+Add a second Y axis on the right side of the chart to plot a series on a different scale. This is useful for combining measures with different units or magnitudes — for example, showing order count on the left axis and average order value on the right.
+
+To use the right axis:
+1. In the **Series configuration** for a specific series, change the **Y axis** assignment from **Left** to **Right**.
+2. The right axis settings appear in the Style tab — configure its title, labels, and scale independently from the left axis.
+
+{/* TODO screenshot: dual-axis chart with bar on left axis and line on right axis (hidden — replace this comment with <Frame><img src="..." /></Frame> when image is ready) */}
+
+## Reference lines
+
+Add reference lines to mark a target, threshold, or benchmark value. A line on a measure axis runs
+across the chart at a fixed value. A line on the X axis of a time series runs vertically, for
+example to mark a launch date.
+
+To add a reference line:
+1. In the Style tab, open the **⋮** menu of an axis section and choose **Add reference line**.
+2. The line starts at the axis's current maximum. Change the **Value** to move it. Clear the value
+   to keep the line at the maximum as the data changes.
+3. Optionally type a **Label**. Until you do, the field shows *Reference 1*, *Reference 2*, and so
+   on, and nothing is printed on the chart.
+4. Click the color swatch to change the line's color.
+5. Click the line button next to the swatch to set the line style (solid, dashed, or dotted), the
+   line width, and the label position.
+
+{/* TODO screenshot: chart with a dashed reference line and label (hidden — replace this comment with <Frame><img src="..." /></Frame> when image is ready) */}
+
+Each reference line is one row in its axis section, and you can add several to the same axis. To
+remove one, open the row's **⋮** menu and choose **Remove reference line**. The axis section's
+**Reset** button also returns every line's color, width, style, and label position to the
+defaults. The lines, their values, and their labels stay.
+
+### Reference line labels
+
+A reference line with no label renders as a bare rule — the reader has to already know what it
+means. Type text into **Label** to name it, for example `Target 18k`.
+
+Once a label is set, place it with **Label position** in the line button's popover. Pick one
+option from each row, for six positions in total. For a line across the chart, on a measure axis:
+
+| Direction | Options | Description |
+|---|---|---|
+| **Horizontal** | Start / Middle / End | Where along the line the text sits |
+| **Vertical** | Above / Below | Which side of the line the text sits on |
+
+New labels start at **End** and **Above** — on a line across the chart, that is the right end of
+the line, clear of the bars. The label takes the line's color, so it always reads as part of that
+line. Clearing the label removes the text and leaves the line itself untouched.
+
+On a vertical line, the label sits halfway up the chart. **Start** puts it to the right of the
+line, **Middle** centers it on the line, and **End** puts it to the left. **Above** and **Below**
+put it just above or just below that halfway point.
+
+<Tip>
+On a line across the chart, a label near the top or bottom edge of the plot flips to the other
+side of the line automatically, so the text stays inside the chart area.
+</Tip>
+
+<Note>
+On a chart with a second Y axis, each side has its own reference lines, drawn against that side's
+scale.
+</Note>

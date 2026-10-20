@@ -1,0 +1,18 @@
+{
+  "measures": [
+    "Events.count",
+    "Events.sessions"
+  ],
+  "dimensions": [
+    "Events.eventName"
+  ],
+  "timeDimensions": [
+    {
+      "dimension": "Events.occurredAt",
+      "granularity": "month"
+    }
+  ],
+  "order": {
+    "Events.eventName": "asc"
+  }
+}

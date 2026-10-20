@@ -1,0 +1,336 @@
+---
+title: Lambda pre-aggregations
+description: Lambda-style pre-aggregations that merge historical rollups with fresher source or streaming layers for near-real-time serving on Cube Store.
+---
+
+Lambda pre-aggregations follow the
+[Lambda architecture](https://en.wikipedia.org/wiki/Lambda_architecture) design
+to union real-time and batch data. Cube acts as a serving layer and uses
+pre-aggregations as a batch layer and source data or other pre-aggregations,
+usually [streaming][streaming-pre-agg], as a speed layer. Due to this design,
+lambda pre-aggregations **only** work with data that is newer than the existing
+batched pre-aggregations.
+
+<Warning>
+
+Lambda pre-aggregations only work with Cube Store.
+
+</Warning>
+
+## Use cases
+
+Below we are looking at the most common examples of using lambda
+pre-aggregations.
+
+### Batch and source data
+
+Batch data is coming from pre-aggregation and real-time data is coming from the
+data source.
+
+<div style={{ textAlign: "center" }}>
+  <img
+    alt="Lambda pre-aggregation batch and source diagram"
+    src="https://ucarecdn.com/a304a8a3-0eb4-4580-a425-052fa353ad69/"
+    style={{ border: "none" }}
+    width="100%"
+  />
+</div>
+
+First, you need to create pre-aggregations that will contain your batch data. In
+the following example, we call it `batch`. Please note, it must have a
+`time_dimension` and `partition_granularity` specified. Cube will use these
+properties to union batch data with freshly-retrieved source data.
+
+You may also control the batch part of your data with the `build_range_start`
+and `build_range_end` properties of a pre-aggregation to determine a specific
+window for your batched data.
+
+Next, you need to create a lambda pre-aggregation. To do that, create
+pre-aggregation with type `rollup_lambda`, specify rollups you would like to use
+with `rollups` property, and finally set `union_with_source_data: true` to use
+source data as a real-time layer.
+
+Please make sure that the lambda pre-aggregation definition comes first when
+defining your pre-aggregations.
+
+<CodeGroup>
+
+```yaml title="YAML"
+cubes:
+  - name: users
+    # ...
+
+    pre_aggregations:
+      - name: lambda
+        type: rollup_lambda
+        union_with_source_data: true
+        rollups:
+          - CUBE.batch
+
+      - name: batch
+        measures:
+          - users.count
+        dimensions:
+          - users.name
+        time_dimension: users.created_at
+        granularity: day
+        partition_granularity: day
+        build_range_start:
+          sql: SELECT '2020-01-01'
+        build_range_end:
+          sql: SELECT '2022-05-30'
+```
+
+```javascript title="JavaScript"
+cube("users", {
+  // ...
+
+  pre_aggregations: {
+    lambda: {
+      type: `rollup_lambda`,
+      union_with_source_data: true,
+      rollups: [CUBE.batch]
+    },
+
+    batch: {
+      measures: [users.count],
+      dimensions: [users.name],
+      time_dimension: users.created_at,
+      granularity: `day`,
+      partition_granularity: `day`,
+      build_range_start: {
+        sql: `SELECT '2020-01-01'`
+      },
+      build_range_end: {
+        sql: `SELECT '2022-05-30'`
+      }
+    }
+  }
+})
+```
+
+</CodeGroup>
+
+<Note>
+
+The source data part is read with a row limit, set by
+[`CUBEJS_MAX_SOURCE_ROW_LIMIT`][ref-max-source-row-limit] (`200000` by default).
+If the source query reaches it, the query fails with an error instead of
+returning truncated data. Raise the limit or narrow the window not covered by
+the batch rollup.
+
+</Note>
+
+### Batch and streaming data
+
+In this scenario, batch data is comes from one pre-aggregation and real-time
+data comes from a [streaming pre-aggregation][streaming-pre-agg].
+
+<div style={{ textAlign: "center" }}>
+  <img
+    alt="Lambda pre-aggregation batch and streaming diagram"
+    src="https://ucarecdn.com/88b1be0f-c2ff-4af2-b5f2-50a6a34760c2/"
+    style={{ border: "none" }}
+    width="100%"
+  />
+</div>
+
+You can use lambda pre-aggregations to combine data from multiple
+pre-aggregations, where one pre-aggregation can have batch data and another
+streaming.
+Cube serves each date range with the first rollup in the list that has a fully
+built partition for it. Each next rollup is used only after the last partition
+served by the previous one. Partitions of the last rollup are used even if they
+are not completely built.
+
+Build ranges of the referenced rollups have to overlap, see
+[below](#overlapping-build-ranges).
+
+<CodeGroup>
+
+```yaml title="YAML"
+cubes:
+  - name: streaming_users
+    # This cube uses a streaming SQL data source such as ksqlDB
+    # ...
+
+    pre_aggregations:
+      - name: streaming
+        type: rollup
+        measures:
+          - CUBE.count
+        dimensions:
+          - CUBE.name
+        time_dimension: CUBE.created_at
+      granularity: day,
+      partition_granularity: day
+
+  - name: users
+    # This cube uses a data source such as ClickHouse or BigQuery
+    # ...
+
+    pre_aggregations:
+      - name: batch_streaming_lambda
+        type: rollup_lambda
+        rollups:
+          - users.batch
+          - streaming_users.streaming
+
+      - name: batch
+        type: rollup
+        measures:
+          - users.count
+        dimensions:
+          - users.name
+        time_dimension: users.created_at
+        granularity: day
+        partition_granularity: day
+        build_range_start:
+          sql: SELECT '2020-01-01'
+        build_range_end:
+          sql: SELECT '2022-05-30'
+```
+
+```javascript title="JavaScript"
+// This cube uses a streaming SQL data source such as ksqlDB
+cube("streaming_users", {
+  // ...
+
+  pre_aggregations: {
+    streaming: {
+      type: `rollup`,
+      measures: [CUBE.count],
+      dimensions: [CUBE.name],
+      time_dimension: CUBE.created_at,
+      granularity: `day`,
+      partition_granularity: `day`
+    }
+  }
+})
+
+// This cube uses a data source such as ClickHouse or BigQuery
+cube("users", {
+  // ...
+
+  pre_aggregations: {
+    batch_streaming_lambda: {
+      type: `rollup_lambda`,
+      rollups: [users.batch, streaming_users.streaming]
+    },
+
+    batch: {
+      type: `rollup`,
+      measures: [users.count],
+      dimensions: [users.name],
+      time_dimension: users.created_at,
+      granularity: `day`,
+      partition_granularity: `day`,
+      build_range_start: {
+        sql: `SELECT '2020-01-01'`
+      },
+      build_range_end: {
+        sql: `SELECT '2022-05-30'`
+      }
+    }
+  }
+})
+```
+
+</CodeGroup>
+
+## Overlapping build ranges
+
+A partition that isn't fully built is skipped for every rollup except the last
+one. When the build range of a rollup starts exactly where the previous one ends,
+the partition that has just become complete, for example the previous day right
+after midnight, is served by no rollup until it's rebuilt. Such days are missing
+from query results without an error.
+
+To avoid that, start the build range of each rollup earlier than the build range
+of the previous one ends, with a margin longer than the previous rollup's
+`refresh_key` interval plus its build time. Rows are not counted twice: a rollup
+skips partitions that the previous one already serves.
+
+<CodeGroup>
+
+```yaml title="YAML"
+cubes:
+  - name: orders
+    # ...
+
+    pre_aggregations:
+      - name: lambda
+        type: rollup_lambda
+        rollups:
+          - CUBE.batch
+          - CUBE.hot
+
+      - name: batch
+        # ...
+        partition_granularity: day
+        build_range_end:
+          sql: SELECT CURRENT_DATE - INTERVAL '14 days'
+        refresh_key:
+          every: 1 day
+
+      - name: hot
+        # ...
+        partition_granularity: day
+        # Starts 2 days before `batch` ends
+        build_range_start:
+          sql: SELECT CURRENT_DATE - INTERVAL '16 days'
+        build_range_end:
+          sql: SELECT CURRENT_DATE
+        refresh_key:
+          every: 10 minute
+```
+
+```javascript title="JavaScript"
+cube(`orders`, {
+  // ...
+
+  pre_aggregations: {
+    lambda: {
+      type: `rollup_lambda`,
+      rollups: [CUBE.batch, CUBE.hot]
+    },
+
+    batch: {
+      // ...
+      partition_granularity: `day`,
+      build_range_end: {
+        sql: `SELECT CURRENT_DATE - INTERVAL '14 days'`
+      },
+      refresh_key: {
+        every: `1 day`
+      }
+    },
+
+    hot: {
+      // ...
+      partition_granularity: `day`,
+      // Starts 2 days before `batch` ends
+      build_range_start: {
+        sql: `SELECT CURRENT_DATE - INTERVAL '16 days'`
+      },
+      build_range_end: {
+        sql: `SELECT CURRENT_DATE`
+      },
+      refresh_key: {
+        every: `10 minute`
+      }
+    }
+  }
+})
+```
+
+</CodeGroup>
+
+If a rollup uses a coarser `partition_granularity` than the next one, the next
+rollup has to start before the beginning of the previous rollup's last partition,
+because that whole partition is skipped until it's complete. For example, with
+`month` partitions on `batch` and `day` partitions on `hot`, start `hot` at
+`date_trunc('month', CURRENT_DATE - INTERVAL '16 days')`.
+
+[streaming-pre-agg]: /docs/pre-aggregations/using-pre-aggregations#streaming-pre-aggregations
+[ref-max-source-row-limit]: /reference/configuration/environment-variables#cubejs_max_source_row_limit

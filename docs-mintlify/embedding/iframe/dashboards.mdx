@@ -1,0 +1,326 @@
+---
+title: Dashboards
+description: Embed Cube dashboards into your applications via iframe.
+---
+
+<Info>
+  Iframe embedding is available on [Premium and Enterprise plans](https://cube.dev/pricing).
+</Info>
+
+Embed any [dashboard](/docs/explore-analyze/dashboards) into your application using an iframe. Dashboards can be embedded with either authentication mode:
+
+- **[Private embedding](/embedding/iframe/auth/private)** — for internal users with Cube accounts (e.g., embedding in Notion, Salesforce, internal tools)
+- **[Signed embedding](/embedding/iframe/auth/signed)** — for external/customer-facing applications using server-generated sessions
+
+## Embed with private embedding
+
+To embed a dashboard for internal users:
+
+1. Open your dashboard in Cube
+2. Click **Share** → **Embed**
+3. Copy the generated iframe code
+
+<img src="https://lgo0ecceic.ucarecd.net/24999bd4-1a7a-4c15-999a-848e6ec3fbe4/" alt="Share embed dialog" />
+
+Then paste the iframe code into your application:
+
+```html
+<iframe
+  title="Dashboard"
+  src="https://your-account.cubecloud.dev/embed/dashboard/YOUR_DASHBOARD_PUBLIC_ID"
+  width="100%"
+  height="800"
+></iframe>
+```
+
+Users will be prompted to sign in with their Cube credentials when accessing the embedded dashboard. See [Private embedding](/embedding/iframe/auth/private) for details on the auth model and integration examples (Notion, Salesforce).
+
+## Embed with signed embedding
+
+Signed embedding must be allowed on the dashboard first: open the dashboard,
+click **Share** → **Embed**, and turn on **Allow signed embedding**. You can
+also toggle it without opening the UI using the [Cube CLI](/reference/cli):
+
+```bash
+cube embed enable-dashboard YOUR_DASHBOARD_PUBLIC_ID
+cube embed disable-dashboard YOUR_DASHBOARD_PUBLIC_ID
+```
+
+To embed a dashboard for external/customer-facing applications, generate a session on your backend and pass the session ID into the iframe:
+
+```html
+<iframe
+  title="Dashboard"
+  src="https://your-tenant.cubecloud.dev/embed/dashboard/YOUR_DASHBOARD_PUBLIC_ID?session=YOUR_SESSION_ID"
+  width="100%"
+  height="800"
+></iframe>
+```
+
+See [Signed embedding](/embedding/iframe/auth/signed) for the full session generation flow, API key setup, and a complete working example.
+
+## Pre-set dashboard filters, granularities, and tabs via URL {#pre-set-dashboard-filters-via-url}
+
+You can pre-set the values of a dashboard's [controls](/docs/explore-analyze/dashboards/widgets/controls) — and the
+tab each [tabs container](/docs/explore-analyze/dashboards/widgets/layout#tabs) opens on — by adding
+URL parameters:
+
+| Widget | Parameter | Example |
+|---|---|---|
+| Filter | `f_<semantic_view>.<dimension>=<JSON>` | `f_orders_transactions.users_country={"value":"USA"}` |
+| Time granularity switcher | `tg_<semantic_view>.<dimension>=<granularity>` | `tg_orders_transactions.created_at=week` |
+| Field switcher | `ms_<semantic_view>.<replaced_member>=<selected_member>` | `ms_orders_transactions.status=users_city` |
+| Tabs container | `tab_<widget_id>=<tab_id>` | `tab_tabs_container_widget_1737045120000=tab_1737045187000` |
+
+The semantic view and member must match the internal names (not display titles)
+configured on the widget — as must the member on the right-hand side of `ms_`,
+which is a measure rather than a dimension when the field switcher's **Field
+Type** is **Measure**. For filters, an omitted filter type defaults to `equals`.
+Granularities are lowercase and must be one of the switcher's [allowed
+granularities](/docs/explore-analyze/dashboards/widgets/controls#allowed-granularities) —
+`day`, `week`, `month`, `quarter`, `year`, plus `second`, `minute`, and `hour`
+for time dimensions that expose them.
+
+A `tab_` parameter is read on a published dashboard only, embedded or not — in
+the dashboard builder it is ignored. It takes internal ids rather than tab
+titles, so read them off a link the dashboard writes itself: open it, switch to
+the tab you want, and copy the URL. One naming a widget the dashboard doesn't
+have, or a tab that container doesn't have, is ignored and the container opens
+on its own default tab.
+
+Example:
+
+```text
+https://your-tenant.cubecloud.dev/embed/dashboard/YOUR_DASHBOARD_PUBLIC_ID?session=YOUR_SESSION_ID&f_orders_transactions.users_country={"value":"USA"}&tg_orders_transactions.created_at=week
+```
+
+The filter's JSON value is shown unencoded for readability. Percent-encode it
+before the URL goes anywhere real — pasted as-is into the `src="…"` of the iframe
+snippet above, its raw `"` closes the attribute and truncates the URL.
+
+`f_`, `tg_`, and `ms_` are read in the dashboard builder and on a published
+dashboard, embedded or not, and are applied only if a matching control for that
+member already exists on the dashboard; a granularity outside the switcher's
+allowed list is ignored, as is a member the field switcher doesn't offer — its
+[**Alternatives**](/docs/explore-analyze/dashboards/widgets/controls#field-switcher),
+plus the member it replaces. An `f_` is also ignored for a filter whose
+[visibility](/docs/explore-analyze/dashboards/widgets/controls#visibility) is
+**Disabled**, which opens on the value it would have without the link; a
+switcher set to **Disabled** still takes its `tg_` or `ms_`.
+
+An empty value clears a control instead of setting it: `f_` with an empty
+`value` and no `type` (`{"value":[]}`), or an empty `tg_`
+(`tg_orders_transactions.created_at=`), opens that control cleared, and its
+default does not fill it back in. See [Controls → Sharing the current
+selection](/docs/explore-analyze/dashboards/widgets/controls#sharing-the-current-selection).
+
+The reverse direction is published-only: when a viewer changes a control — or
+switches a tab — the new value is written back into the dashboard's own URL, so
+the state a link carries and the state a viewer reaches by clicking are the same
+format. See [Controls → Sharing the current
+selection](/docs/explore-analyze/dashboards/widgets/controls#sharing-the-current-selection).
+
+## Allow chart and dashboard export {#allow-csv-export}
+
+By default, embedded dashboards do not expose a download action on individual
+widgets or on the dashboard as a whole. To let viewers download a chart widget
+as a **CSV**, **PNG**, or **PDF** file (and a table widget as a **print
+version** too), and download the **whole dashboard** as a **PNG**, a **PDF**, or
+a **print version**, add the `allowExport=true` query parameter to the embed
+URL:
+
+```text
+https://your-tenant.cubecloud.dev/embed/dashboard/YOUR_DASHBOARD_PUBLIC_ID?session=YOUR_SESSION_ID&allowExport=true
+```
+
+When enabled, each chart widget's ⋮ menu shows **Download as CSV**, **Download
+as PNG**, and **Download as PDF** actions, and a dashboard-level ⋮ appears —
+docked in the header in [Creator Mode](/embedding/iframe/creator-mode),
+floating over the dashboard in the published-dashboard embed — with **Download
+as PNG**, **Download as PDF**, and **Download print version** for the whole
+dashboard. **Download print version** downloads a PDF laid out for A4 paper
+rather than a capture of the screen (see [Print
+version](/docs/explore-analyze/dashboards#print-version)).
+Its summary line states the value of every control, [Hidden
+ones](/docs/explore-analyze/dashboards/widgets/controls#visibility) included,
+so a tenant filter pre-set through `f_…` or taken from a user attribute appears
+as text in the file. A table widget's ⋮ also shows **Download print version**,
+the print version of that table alone, with the same summary line (see [Print a
+single table](/docs/explore-analyze/dashboards#print-a-single-table)).
+`allowExport` is the single switch that grants all of these — there is no way
+to allow one format while blocking another. It also grants **Download as CSV**
+in the Creator Mode report builder; see [Show and hide
+features](/embedding/iframe/feature-visibility).
+Only the exact literal string `true` opts in: `allowExport=1`,
+`allowExport=TRUE`, a bare `?allowExport`, and omitting the parameter (the
+default) all leave every download action hidden.
+
+A widget's CSV is generated client-side from the data already loaded into the
+widget, so no additional query is issued. Inside an embed, `allowExport` —
+not the viewer's own Cube role — is the authority on whether the download
+actions appear. The account-wide **Allow data downloads** switch outranks it —
+see [Restricting data
+downloads](/admin/users-and-permissions/roles-and-permissions#restricting-data-downloads).
+
+To turn on per-widget downloads without the whole-dashboard ⋮ menu — for a
+host that surfaces its own dashboard-level export, for example — add
+`showDashboardExportMenu=false`:
+
+```text
+https://your-tenant.cubecloud.dev/embed/dashboard/YOUR_DASHBOARD_PUBLIC_ID?session=YOUR_SESSION_ID&allowExport=true&showDashboardExportMenu=false
+```
+
+Like the header controls below, only the exact literal string `false` hides
+the menu; it has no effect unless `allowExport=true` is also set.
+
+### Downloads in a sandboxed iframe {#sandboxed-iframe-downloads}
+
+Every download is saved from inside the embed's iframe, so your page needs no
+extra configuration for it — unless you sandbox the iframe. A `sandbox`
+attribute blocks file downloads unless it includes `allow-downloads`:
+
+```html
+<iframe
+  title="Dashboard"
+  src="https://your-tenant.cubecloud.dev/embed/dashboard/YOUR_DASHBOARD_PUBLIC_ID?session=YOUR_SESSION_ID&allowExport=true"
+  sandbox="allow-scripts allow-same-origin allow-downloads"
+  width="100%"
+  height="800"
+></iframe>
+```
+
+- `allow-scripts allow-same-origin` are required for the embed to load at all.
+- `allow-downloads` is required for downloads. Without it, the browser drops
+  the file silently: the viewer clicks **Download** and nothing happens, with no
+  error shown.
+- A `Content-Security-Policy: sandbox …` response header on your page applies
+  the same restriction to the iframe, so add `allow-downloads` there too.
+- Other CSP directives on your page and `Permissions-Policy` do not affect
+  downloads. `frame-src` (or its `default-src` fallback) must still allow your
+  Cube tenant's origin for the embed to load at all.
+
+## Show or hide the AI chat
+
+Embedded dashboards show an AI chat (the agent panel and its launcher bubble) by
+default. You can control it in two ways:
+
+- **Globally, in the UI.** Toggle **Show AI chat on embedded dashboards** under
+  **Embed → Settings** in the Cube console. This switch is
+  account-wide — it turns the AI chat on or off for the entire embedded surface,
+  i.e. every embedded dashboard.
+- **Per session, via the API.** Pass `settings.showDashboardChat` when you
+  [generate the session](/reference/embed-apis/generate-session#session-settings). A per-session
+  value takes precedence over the global toggle — `false` hides the chat for that
+  session even when it is enabled account-wide, and `true` shows it even when it
+  is disabled:
+
+```javascript
+body: JSON.stringify({
+  deploymentId: DEPLOYMENT_ID,
+  externalId: "user@example.com",
+  settings: {
+    // Hide the AI chat for this viewer only
+    showDashboardChat: false,
+  },
+}),
+```
+
+This applies to embedded published dashboards; it does not affect the standalone
+[Analytics Chat](/embedding/iframe/analytics-chat) surface, where embedding the
+chat is itself the opt-in. To withhold AI from a session entirely — every surface,
+enforced on the server — use `settings.allowAi` instead. See [Show and hide
+features](/embedding/iframe/feature-visibility).
+
+## Comments
+
+Viewers of an embedded dashboard can discuss it in comment threads, kept
+separate per embed tenant. The panel is off until the account turns on
+**Allow comments on embedded dashboards** under **Embed → Settings**.
+[Dashboard Comments](/reference/embed-apis/dashboard-comments) documents that
+setting and what it does not gate, how `embedTenantName` separates one
+customer's conversation from another's, the API behind the panel, and who may
+edit, delete, and resolve.
+
+## Show or hide header controls
+
+By default, an embedded dashboard's header shows its title, back button, and
+— when the viewer has permission — the Edit and Duplicate actions. Hide any
+of them individually with URL parameters on the embed iframe `src`:
+
+| Parameter | Hides |
+| --- | --- |
+| `showDashboardHeader=false` | The entire header bar |
+| `showDashboardBackButton=false` | The back button |
+| `showDashboardTitle=false` | The dashboard title |
+| `showDashboardEditButton=false` | The Edit action |
+| `showDashboardDuplicateButton=false` | The Duplicate action |
+
+```text
+https://your-tenant.cubecloud.dev/embed/dashboard/YOUR_DASHBOARD_PUBLIC_ID?session=YOUR_SESSION_ID&showDashboardBackButton=false&showDashboardTitle=false
+```
+
+Every one of these defaults to shown. Only the exact literal string `false`
+hides a control — `=0`, `=False`, `=FALSE`, and a bare `?showDashboardTitle`
+(no value) all leave it visible. Note this is the inverse of `allowExport`
+above, where only the literal string `true` opts in.
+
+<Note>
+These parameters are URL-only — they aren't accepted in the [Generate
+Session](/reference/embed-apis/generate-session#session-settings) `settings`
+object, unlike `showDashboardChat`, and they have no account-wide default
+under **Embed → Settings**.
+</Note>
+
+These parameters apply to the dashboard header only. Setting
+`showDashboardHeader=false` overrides the other four: the whole bar
+disappears regardless of their values. `showDashboardEditButton` can only
+hide the Edit action; it can never show one to a viewer who lacks edit
+permission.
+
+The export menu has its own switch, `showDashboardExportMenu=false`, covered
+above under [Allow chart and dashboard export](#allow-csv-export) — unlike
+the header controls above, it's hidden by default. It also isn't part of
+the dashboard header the way those controls are: in Creator Mode it's docked
+in the header, but on the published-dashboard embed it floats over the
+dashboard, so `showDashboardHeader=false` doesn't hide it there.
+
+### Creator Mode workbook header
+
+The [Creator Mode](/embedding/iframe/creator-mode) workbook header — which
+carries the workbook name, tabs, Publish, and Share — is a separate
+surface with its own back-button switch:
+
+| Parameter | Hides |
+| --- | --- |
+| `showWorkbookBackButton=false` | The back button in the Creator Mode workbook header |
+
+`showWorkbookBackButton` is independent of `showDashboardBackButton` above —
+the two headers are separate surfaces, so a host that wants neither back
+button sets both. The rest of the workbook header (name, tabs, Publish,
+Share) has no equivalent switch, since those actions are part of the
+authoring flow. The workbook actions menu still offers **View all**, so
+hiding the back button never removes a way back to the workspace. It follows
+the same rules as the parameters above: only the exact literal string `false`
+hides it, and it is URL-only — not accepted in the Generate Session `settings`
+object, and with no account-wide default under **Embed → Settings**.
+
+These parameters are read from the URL the host loaded the iframe with and
+stay pinned for the life of the embed, so they survive in-app navigation
+(for example, from the home-page dashboard card, or after publishing a
+draft).
+
+## Set the language
+
+Embedded dashboards render their UI in the account's default language, which you can
+override per embed by adding the `?locale=` query parameter:
+
+```text
+https://your-tenant.cubecloud.dev/embed/dashboard/YOUR_DASHBOARD_PUBLIC_ID?session=YOUR_SESSION_ID&locale=es-MX
+```
+
+See [Localization](/embedding/iframe/localization) for the list of supported languages
+and the other ways to set the language.
+
+## Customize appearance
+
+You can style an embedded dashboard — background, padding, widget borders, titles, and fonts — from the **Styling** panel in the Dashboard Builder. See [Dashboards → Styling](/docs/explore-analyze/dashboards/styling) for the full list of options.

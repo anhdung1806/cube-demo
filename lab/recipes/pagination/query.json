@@ -1,0 +1,15 @@
+{
+  "measures": [
+    "Orders.count",
+    "Orders.revenue"
+  ],
+  "dimensions": [
+    "Orders.id",
+    "Orders.status"
+  ],
+  "order": {
+    "Orders.id": "asc"
+  },
+  "limit": 5,
+  "offset": 0
+}

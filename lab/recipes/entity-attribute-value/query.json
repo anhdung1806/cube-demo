@@ -1,0 +1,13 @@
+{
+  "measures": [
+    "CustomerAttributes.count"
+  ],
+  "dimensions": [
+    "CustomerAttributes.attributeName",
+    "CustomerAttributes.attributeValue"
+  ],
+  "order": {
+    "CustomerAttributes.attributeName": "asc"
+  },
+  "limit": 50
+}

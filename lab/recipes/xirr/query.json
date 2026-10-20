@@ -1,0 +1,14 @@
+{
+  "measures": [
+    "CashFlows.netCashFlow"
+  ],
+  "timeDimensions": [
+    {
+      "dimension": "CashFlows.occurredAt",
+      "granularity": "month"
+    }
+  ],
+  "order": {
+    "CashFlows.occurredAt": "asc"
+  }
+}

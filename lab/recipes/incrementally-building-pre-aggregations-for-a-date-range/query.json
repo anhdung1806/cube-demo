@@ -1,0 +1,18 @@
+{
+  "measures": [
+    "Orders.revenue",
+    "Orders.count"
+  ],
+  "dimensions": [
+    "Orders.status"
+  ],
+  "timeDimensions": [
+    {
+      "dimension": "Orders.orderedAt",
+      "granularity": "month"
+    }
+  ],
+  "order": {
+    "Orders.orderedAt": "asc"
+  }
+}

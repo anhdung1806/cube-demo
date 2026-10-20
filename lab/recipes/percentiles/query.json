@@ -1,0 +1,8 @@
+{
+  "measures": [
+    "Orders.averageOrderValue",
+    "Orders.medianOrderValue",
+    "Orders.p95OrderValue",
+    "Orders.uniqueCustomers"
+  ]
+}

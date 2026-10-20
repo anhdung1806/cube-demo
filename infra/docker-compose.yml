@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: data360_poc_db
+    environment:
+      POSTGRES_DB: data360_poc
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - ../seed/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ../seed/02_data.sql:/docker-entrypoint-initdb.d/02_data.sql
+      - ../seed/03_semantic_registry.sql:/docker-entrypoint-initdb.d/03_semantic_registry.sql
+      - ../seed/04_semantic_seed.sql:/docker-entrypoint-initdb.d/04_semantic_seed.sql
+      - ../seed/05_tenant_2_seed.sql:/docker-entrypoint-initdb.d/05_tenant_2_seed.sql
+      - ../seed/06_poc4_migrations.sql:/docker-entrypoint-initdb.d/06_poc4_migrations.sql
+
+  cube:
+    image: cubejs/cube:latest
+    container_name: data360_poc_cube
+    ports:
+      - "4000:4000"
+    environment:
+      CUBEJS_DB_TYPE: postgres
+      CUBEJS_DB_HOST: db
+      CUBEJS_DB_NAME: data360_poc
+      CUBEJS_DB_USER: postgres
+      CUBEJS_DB_PASS: postgres
+      CUBEJS_DEV_MODE: "true"
+      CUBEJS_API_SECRET: "secret12345"
+      # CUBEJS_SCHEMA_PATH đã bị xóa — không dùng file schema nữa.
+      # Schema được load 100% dynamic qua repositoryFactory trong cube.js
+      CUBEJS_CONF_FILE: /cube/conf/cube.js
+    volumes:
+      - ../cube:/cube/conf
+    depends_on:
+      - db

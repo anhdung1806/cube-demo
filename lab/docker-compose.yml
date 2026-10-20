@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: data360_lab
+      POSTGRES_USER: cube
+      POSTGRES_PASSWORD: cube-local-only
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - lab-db-v2:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cube -d data360_lab"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  cube:
+    image: cubejs/cube:latest
+    environment:
+      CUBEJS_DB_TYPE: postgres
+      CUBEJS_DB_HOST: db
+      CUBEJS_DB_PORT: 5432
+      CUBEJS_DB_NAME: data360_lab
+      CUBEJS_DB_USER: cube
+      CUBEJS_DB_PASS: cube-local-only
+      CUBEJS_API_SECRET: local-lab-secret-change-me
+      CUBEJS_DEV_MODE: "true"
+      CUBEJS_PG_SQL_PORT: 15432
+      CUBEJS_SCHEMA_PATH: schema
+    ports:
+      - "4000:4000"
+      - "15432:15432"
+    volumes:
+      - ./cube:/cube/conf:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+      - ./recipes:/usr/share/nginx/html/recipes:ro
+    depends_on:
+      - cube
+
+volumes:
+  lab-db-v2:

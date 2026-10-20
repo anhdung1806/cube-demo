@@ -1,0 +1,11 @@
+{
+  "measures": [
+    "Events.activeCustomers"
+  ],
+  "dimensions": [
+    "Events.eventName"
+  ],
+  "order": {
+    "Events.eventName": "asc"
+  }
+}

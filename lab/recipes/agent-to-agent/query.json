@@ -1,0 +1,11 @@
+{
+  "measures": [
+    "Orders.revenue"
+  ],
+  "dimensions": [
+    "Customers.segment"
+  ],
+  "order": {
+    "Orders.revenue": "desc"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "measures": [
+    "Events.activeCustomers"
+  ],
+  "timeDimensions": [
+    {
+      "dimension": "Events.occurredAt",
+      "granularity": "month"
+    }
+  ],
+  "order": {
+    "Events.occurredAt": "asc"
+  }
+}

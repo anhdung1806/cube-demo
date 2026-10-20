@@ -1,0 +1,290 @@
+[
+  {
+    "slug": "agent-to-agent",
+    "title": "Agent-to-agent: using the Chat API as a tool",
+    "route": "/recipes/ai/agent-to-agent",
+    "source": "docs-mintlify/recipes/ai/agent-to-agent.mdx"
+  },
+  {
+    "slug": "custom-data-model-per-tenant",
+    "title": "Providing a custom data model for each tenant",
+    "route": "/recipes/configuration/custom-data-model-per-tenant",
+    "source": "docs-mintlify/recipes/configuration/custom-data-model-per-tenant.mdx"
+  },
+  {
+    "slug": "data-store-cost-saving-guide",
+    "title": "Optimizing data source usage",
+    "route": "/recipes/configuration/data-store-cost-saving-guide",
+    "source": "docs-mintlify/recipes/configuration/data-store-cost-saving-guide.mdx"
+  },
+  {
+    "slug": "environment-variables",
+    "title": "Referencing environment variables",
+    "route": "/recipes/configuration/environment-variables",
+    "source": "docs-mintlify/recipes/configuration/environment-variables.mdx"
+  },
+  {
+    "slug": "multiple-sources-same-schema",
+    "title": "Providing a custom data source for each tenant",
+    "route": "/recipes/configuration/multiple-sources-same-schema",
+    "source": "docs-mintlify/recipes/configuration/multiple-sources-same-schema.mdx"
+  },
+  {
+    "slug": "using-ssl-connections-to-data-source",
+    "title": "Using SSL connections to a data source",
+    "route": "/recipes/configuration/using-ssl-connections-to-data-source",
+    "source": "docs-mintlify/recipes/configuration/using-ssl-connections-to-data-source.mdx"
+  },
+  {
+    "slug": "cast-numerics",
+    "title": "Retrieving numeric values on the front-end",
+    "route": "/recipes/core-data-api/cast-numerics",
+    "source": "docs-mintlify/recipes/core-data-api/cast-numerics.mdx"
+  },
+  {
+    "slug": "cloud-groups-and-user-attributes",
+    "title": "Using cloud groups and user attributes with Core Data APIs",
+    "route": "/recipes/core-data-api/cloud-groups-and-user-attributes",
+    "source": "docs-mintlify/recipes/core-data-api/cloud-groups-and-user-attributes.mdx"
+  },
+  {
+    "slug": "drilldowns",
+    "title": "Drilldowns",
+    "route": "/recipes/core-data-api/drilldowns",
+    "source": "docs-mintlify/recipes/core-data-api/drilldowns.mdx"
+  },
+  {
+    "slug": "getting-unique-values-for-a-field",
+    "title": "Getting unique values for a field",
+    "route": "/recipes/core-data-api/getting-unique-values-for-a-field",
+    "source": "docs-mintlify/recipes/core-data-api/getting-unique-values-for-a-field.mdx"
+  },
+  {
+    "slug": "pagination",
+    "title": "Implementing pagination",
+    "route": "/recipes/core-data-api/pagination",
+    "source": "docs-mintlify/recipes/core-data-api/pagination.mdx"
+  },
+  {
+    "slug": "real-time-data-fetch",
+    "title": "Real-Time data fetch in the REST (JSON) API",
+    "route": "/recipes/core-data-api/real-time-data-fetch",
+    "source": "docs-mintlify/recipes/core-data-api/real-time-data-fetch.mdx"
+  },
+  {
+    "slug": "sorting",
+    "title": "Implementing custom sorting",
+    "route": "/recipes/core-data-api/sorting",
+    "source": "docs-mintlify/recipes/core-data-api/sorting.mdx"
+  },
+  {
+    "slug": "active-users",
+    "title": "Daily, Weekly, Monthly Active Users (DAU, WAU, MAU)",
+    "route": "/recipes/data-modeling/active-users",
+    "source": "docs-mintlify/recipes/data-modeling/active-users.mdx"
+  },
+  {
+    "slug": "average-order-value",
+    "title": "Calculating average order value",
+    "route": "/recipes/data-modeling/average-order-value",
+    "source": "docs-mintlify/recipes/data-modeling/average-order-value.mdx"
+  },
+  {
+    "slug": "cohort-retention",
+    "title": "Implementing retention analysis & cohorts",
+    "route": "/recipes/data-modeling/cohort-retention",
+    "source": "docs-mintlify/recipes/data-modeling/cohort-retention.mdx"
+  },
+  {
+    "slug": "cross-data-source-queries",
+    "title": "Querying across data sources",
+    "route": "/recipes/data-modeling/cross-data-source-queries",
+    "source": "docs-mintlify/recipes/data-modeling/cross-data-source-queries.mdx"
+  },
+  {
+    "slug": "custom-calendar",
+    "title": "Implementing custom calendars",
+    "route": "/recipes/data-modeling/custom-calendar",
+    "source": "docs-mintlify/recipes/data-modeling/custom-calendar.mdx"
+  },
+  {
+    "slug": "custom-granularity",
+    "title": "Implementing custom time dimension granularities",
+    "route": "/recipes/data-modeling/custom-granularity",
+    "source": "docs-mintlify/recipes/data-modeling/custom-granularity.mdx"
+  },
+  {
+    "slug": "custom-order",
+    "title": "Custom ordering for categorical values",
+    "route": "/recipes/data-modeling/custom-order",
+    "source": "docs-mintlify/recipes/data-modeling/custom-order.mdx"
+  },
+  {
+    "slug": "dbt",
+    "title": "Using Cube with dbt",
+    "route": "/recipes/data-modeling/dbt",
+    "source": "docs-mintlify/recipes/data-modeling/dbt.mdx"
+  },
+  {
+    "slug": "designing-metrics",
+    "title": "Designing metrics",
+    "route": "/recipes/data-modeling/designing-metrics",
+    "source": "docs-mintlify/recipes/data-modeling/designing-metrics.mdx"
+  },
+  {
+    "slug": "dynamic-rolling-windows",
+    "title": "Configurable rolling windows and time shifts",
+    "route": "/recipes/data-modeling/dynamic-rolling-windows",
+    "source": "docs-mintlify/recipes/data-modeling/dynamic-rolling-windows.mdx"
+  },
+  {
+    "slug": "dynamic-union-tables",
+    "title": "Using dynamic union tables",
+    "route": "/recipes/data-modeling/dynamic-union-tables",
+    "source": "docs-mintlify/recipes/data-modeling/dynamic-union-tables.mdx"
+  },
+  {
+    "slug": "entity-attribute-value",
+    "title": "Implementing Entity-Attribute-Value Model (EAV)",
+    "route": "/recipes/data-modeling/entity-attribute-value",
+    "source": "docs-mintlify/recipes/data-modeling/entity-attribute-value.mdx"
+  },
+  {
+    "slug": "event-analytics",
+    "title": "Implementing event analytics",
+    "route": "/recipes/data-modeling/event-analytics",
+    "source": "docs-mintlify/recipes/data-modeling/event-analytics.mdx"
+  },
+  {
+    "slug": "filtered-aggregates",
+    "title": "Calculating filtered aggregates",
+    "route": "/recipes/data-modeling/filtered-aggregates",
+    "source": "docs-mintlify/recipes/data-modeling/filtered-aggregates.mdx"
+  },
+  {
+    "slug": "funnels",
+    "title": "Implementing funnel analysis",
+    "route": "/recipes/data-modeling/funnels",
+    "source": "docs-mintlify/recipes/data-modeling/funnels.mdx"
+  },
+  {
+    "slug": "nested-aggregates",
+    "title": "Calculating nested aggregates",
+    "route": "/recipes/data-modeling/nested-aggregates",
+    "source": "docs-mintlify/recipes/data-modeling/nested-aggregates.mdx"
+  },
+  {
+    "slug": "passing-dynamic-parameters-in-a-query",
+    "title": "Passing dynamic parameters in a query",
+    "route": "/recipes/data-modeling/passing-dynamic-parameters-in-a-query",
+    "source": "docs-mintlify/recipes/data-modeling/passing-dynamic-parameters-in-a-query.mdx"
+  },
+  {
+    "slug": "percentiles",
+    "title": "Calculating averages and percentiles",
+    "route": "/recipes/data-modeling/percentiles",
+    "source": "docs-mintlify/recipes/data-modeling/percentiles.mdx"
+  },
+  {
+    "slug": "period-over-period",
+    "title": "Calculating period-over-period changes",
+    "route": "/recipes/data-modeling/period-over-period",
+    "source": "docs-mintlify/recipes/data-modeling/period-over-period.mdx"
+  },
+  {
+    "slug": "polymorphic-cubes",
+    "title": "Polymorphic cubes",
+    "route": "/recipes/data-modeling/polymorphic-cubes",
+    "source": "docs-mintlify/recipes/data-modeling/polymorphic-cubes.mdx"
+  },
+  {
+    "slug": "reusable-period-to-date",
+    "title": "Reusing period-to-date logic across measures",
+    "route": "/recipes/data-modeling/reusable-period-to-date",
+    "source": "docs-mintlify/recipes/data-modeling/reusable-period-to-date.mdx"
+  },
+  {
+    "slug": "reusing-view-measures",
+    "title": "Reusing a view measure across views",
+    "route": "/recipes/data-modeling/reusing-view-measures",
+    "source": "docs-mintlify/recipes/data-modeling/reusing-view-measures.mdx"
+  },
+  {
+    "slug": "share-of-total",
+    "title": "Calculating share of total",
+    "route": "/recipes/data-modeling/share-of-total",
+    "source": "docs-mintlify/recipes/data-modeling/share-of-total.mdx"
+  },
+  {
+    "slug": "snapshots",
+    "title": "Implementing data snapshots",
+    "route": "/recipes/data-modeling/snapshots",
+    "source": "docs-mintlify/recipes/data-modeling/snapshots.mdx"
+  },
+  {
+    "slug": "string-time-dimensions",
+    "title": "Working around string time dimensions",
+    "route": "/recipes/data-modeling/string-time-dimensions",
+    "source": "docs-mintlify/recipes/data-modeling/string-time-dimensions.mdx"
+  },
+  {
+    "slug": "style-guide",
+    "title": "Cube style guide",
+    "route": "/recipes/data-modeling/style-guide",
+    "source": "docs-mintlify/recipes/data-modeling/style-guide.mdx"
+  },
+  {
+    "slug": "using-dynamic-measures",
+    "title": "Generating the data model dynamically",
+    "route": "/recipes/data-modeling/using-dynamic-measures",
+    "source": "docs-mintlify/recipes/data-modeling/using-dynamic-measures.mdx"
+  },
+  {
+    "slug": "xirr",
+    "title": "Calculating the internal rate of return (XIRR)",
+    "route": "/recipes/data-modeling/xirr",
+    "source": "docs-mintlify/recipes/data-modeling/xirr.mdx"
+  },
+  {
+    "slug": "disabling-pre-aggregations",
+    "title": "Disabling pre-aggregations",
+    "route": "/recipes/pre-aggregations/disabling-pre-aggregations",
+    "source": "docs-mintlify/recipes/pre-aggregations/disabling-pre-aggregations.mdx"
+  },
+  {
+    "slug": "incrementally-building-pre-aggregations-for-a-date-range",
+    "title": "Incrementally building pre-aggregations for a date range",
+    "route": "/recipes/pre-aggregations/incrementally-building-pre-aggregations-for-a-date-range",
+    "source": "docs-mintlify/recipes/pre-aggregations/incrementally-building-pre-aggregations-for-a-date-range.mdx"
+  },
+  {
+    "slug": "joining-multiple-data-sources",
+    "title": "Joining data from multiple data sources",
+    "route": "/recipes/pre-aggregations/joining-multiple-data-sources",
+    "source": "docs-mintlify/recipes/pre-aggregations/joining-multiple-data-sources.mdx"
+  },
+  {
+    "slug": "mixed-refresh-cadences-rollup-join",
+    "title": "Joining pre-aggregations with different refresh cadences",
+    "route": "/recipes/pre-aggregations/mixed-refresh-cadences-rollup-join",
+    "source": "docs-mintlify/recipes/pre-aggregations/mixed-refresh-cadences-rollup-join.mdx"
+  },
+  {
+    "slug": "non-additivity",
+    "title": "Accelerating non-additive measures",
+    "route": "/recipes/pre-aggregations/non-additivity",
+    "source": "docs-mintlify/recipes/pre-aggregations/non-additivity.mdx"
+  },
+  {
+    "slug": "refreshing-select-partitions",
+    "title": "Refreshing select partitions",
+    "route": "/recipes/pre-aggregations/refreshing-select-partitions",
+    "source": "docs-mintlify/recipes/pre-aggregations/refreshing-select-partitions.mdx"
+  },
+  {
+    "slug": "using-originalsql-and-rollups-effectively",
+    "title": "Using `original_sql` and `rollup` pre-aggregations effectively",
+    "route": "/recipes/pre-aggregations/using-originalsql-and-rollups-effectively",
+    "source": "docs-mintlify/recipes/pre-aggregations/using-originalsql-and-rollups-effectively.mdx"
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "measures": [
+    "Orders.count",
+    "Orders.revenue"
+  ],
+  "dimensions": [
+    "Orders.status"
+  ],
+  "order": {
+    "Orders.status": "asc"
+  }
+}

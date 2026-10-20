@@ -1,0 +1,64 @@
+---
+title: Lab Cube cho Data360
+description: Dựng Cube bằng Docker và thực hành semantic layer đa tenant trên một bộ dữ liệu xuyên suốt.
+mode: wide
+---
+
+# Lab Cube cho Data360
+
+Lab này dựng một nền tảng B2B giả lập bằng PostgreSQL và Cube. Các ví dụ đều truy vấn cùng dữ liệu khách hàng, đơn hàng và sản phẩm để bạn thấy một khái niệm mới thay đổi cách truy vấn ra sao.
+
+## 1. Khởi động lab
+
+Tại thư mục gốc repo, chạy:
+
+```bash
+cd lab
+docker compose up -d
+```
+
+Mở [trang thử REST và SQL](http://localhost:8080) và [Cube Playground](http://localhost:4000). PostgreSQL nguồn ở cổng `5433`; Cube REST ở cổng `4000`; Cube SQL API tương thích PostgreSQL ở cổng `15432`. Dừng lab bằng `docker compose down`. Dùng `docker compose down -v` để xóa dữ liệu đã lưu.
+
+> Secret, dữ liệu và cấu hình trong lab chỉ dành cho máy cá nhân. Không đưa cổng hay khóa demo lên môi trường dùng thật.
+
+## 2. Bộ dữ liệu dùng chung
+
+Có ba tenant (101, 202, 303), với doanh nghiệp khách hàng, đơn hàng, sản phẩm, sự kiện sử dụng, thuộc tính khách hàng dạng EAV, lịch sử trạng thái và dòng tiền. Bảng `orders` là fact bán hàng; `events` hỗ trợ bài DAU/WAU/MAU, funnel và cohort. Dữ liệu cố ý nhỏ để dễ kiểm tra bằng mắt, không dùng để đo hiệu năng.
+
+## 3. Mô hình semantic và metric
+
+Mở `cube/schema/Orders.js`. Cube ánh xạ `amount` thành doanh thu, đếm đơn hàng, tính giá trị trung bình và số khách duy nhất. Join tới khách hàng và sản phẩm cho phép đặt câu hỏi theo tỉnh, phân khúc hoặc danh mục mà không phải viết lại logic metric ở từng dashboard.
+
+Thử truy vấn `Orders.revenue` theo `Orders.orderedAt` ở mức tháng. Sau đó thêm `Orders.status` để thấy bộ lọc/chiều phân tích làm thay đổi kết quả thế nào.
+
+## 4. Truy vấn REST
+
+Trang demo gửi JSON query tới `/cubejs-api/v1/load`. Một query mô tả member cần lấy, time dimension và thứ tự sắp xếp; Cube sinh SQL phù hợp với nguồn dữ liệu. API secret của demo là khóa cố định và trang chỉ để thử trên máy cá nhân.
+
+## 5. SQL API
+
+Cube SQL API nói giao thức PostgreSQL trên cổng `15432`, để SQL client kết nối và truy vấn semantic model. Nó khác PostgreSQL nguồn ở cổng `5433`. Dùng `psql` hoặc client tương thích PostgreSQL để kết nối. Truy vấn SQL đi qua mô hình Cube, vì vậy tên bảng/cột SQL có thể không trùng bảng vật lý; xem schema được Cube công bố trong SQL client.
+
+## 6. Bảo mật đa tenant
+
+`cube/cube.js` có `queryRewrite` bắt buộc mọi truy vấn phải có `tenantId` trong security context của JWT, rồi thêm filter `Orders.tenantId` theo tenant đó. Cách viết này giống cấu trúc các ví dụ tại `examples/recipes/mandatory-filters` và `examples/recipes/role-based-access`. Trong hệ thống thật, backend xác thực người dùng, xác định tenant từ danh tính đã tin cậy, ký JWT bằng secret riêng và gửi token tới Cube. Không nhận tenant ID hay token ký từ trình duyệt như nguồn tin cậy. Rule hiện tại áp lên cube Orders; cần mở rộng/điều chỉnh cho mọi cube/view và kiểm tra join, drill-down, SQL API lẫn pre-aggregation.
+
+Đây là ví dụ học cơ chế, chưa phải cấu hình bảo mật hoàn chỉnh. Dữ liệu mẫu ở Customers/Products được dùng để minh họa join; cần bổ sung chính sách tương ứng khi đưa dữ liệu tenant-sensitive qua API.
+
+## 7. Pre-aggregation
+
+Orders khai báo rollup theo tháng, tenant và trạng thái. Cube có thể phục vụ truy vấn khớp rollup từ dữ liệu đã vật chất hóa thay vì tính lại từ bảng fact. Trong Playground hoặc logs, xem query có dùng pre-aggregation hay không; thử bỏ một dimension hoặc đổi granularity để nhận biết khi rollup không còn khớp.
+
+Rollup tạo chi phí lưu trữ, thời gian build và độ trễ cập nhật. `countDistinct` không nằm trong rollup mẫu vì distinct thường không cộng gộp được như tổng; muốn tăng tốc phải chọn chiến lược phù hợp và xác minh kết quả. Khóa refresh mỗi giờ chỉ là cấu hình minh họa.
+
+## 8. Giới hạn cần đánh giá trước khi dùng cho Data360
+
+- 350.000 doanh nghiệp không đồng nghĩa với 350.000 schema hay một cách ly duy nhất. Chọn row-level tenant, schema/database riêng hoặc kết hợp theo yêu cầu pháp lý, tải và vận hành.
+- Lab không mô phỏng concurrency, dữ liệu lớn, nhiều vùng, lỗi node, backpressure, HA hay disaster recovery.
+- Rollup không tăng tốc mọi query; cardinality, tổ hợp chiều, truy vấn ad hoc, lịch refresh và chính sách tenant ảnh hưởng mạnh đến số lượng partition và cache hit.
+- Đo workload thật theo tenant lớn/nhỏ, p95/p99, concurrency, thời gian refresh, chi phí lưu trữ và độ trễ dữ liệu. Xác minh tenant isolation bằng kiểm thử tiêu cực xuyên REST, SQL, drill-through và cache.
+- Quản lý secret qua secret manager, tắt dev mode, giới hạn mạng, TLS, quan sát logs/metrics và lập kế hoạch nâng cấp phiên bản trước production.
+
+## Thứ tự học
+
+Có 48 bài lab tương ứng 48 hướng dẫn trong [mục lục recipes](/recipes). Mỗi bài có README tiếng Việt và query JSON trong `lab/recipes/<slug>`; chọn bài trên trang lab để nạp query. Một số bài về SSL, dbt, multi-database hoặc tích hợp AI yêu cầu hệ thống ngoài, nên giải thích cách áp dụng thay vì giả lập dịch vụ đó trong stack local.

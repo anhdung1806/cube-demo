@@ -1,0 +1,11 @@
+{
+  "measures": [
+    "Customers.count"
+  ],
+  "dimensions": [
+    "Customers.province"
+  ],
+  "order": {
+    "Customers.province": "asc"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "measures": [
+    "OrderStatusHistory.count"
+  ],
+  "dimensions": [
+    "OrderStatusHistory.status"
+  ],
+  "timeDimensions": [
+    {
+      "dimension": "OrderStatusHistory.changedAt",
+      "granularity": "month"
+    }
+  ],
+  "order": {
+    "OrderStatusHistory.changedAt": "asc"
+  }
+}

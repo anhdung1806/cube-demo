@@ -1,0 +1,482 @@
+---
+title: Control Plane API
+description: REST surface for automating Cube deployments, environments, JWT issuance, audit log export, and dashboard PDF/PNG export.
+---
+
+Control Plane API enables programmatic management of [deployments][ref-deployments]
+and [environments][ref-environments] in Cube Cloud. You can use it to list
+deployments, manage environments, generate JWT tokens for accessing
+[Core Data APIs][ref-core-data-apis], and export [audit log][ref-audit-log] events.
+
+<Info>
+
+Control Plane API is only available in Cube Cloud.
+
+</Info>
+
+## Prerequisites
+
+### Authentication
+
+Control Plane API uses [API key][ref-api-keys] authentication. Include your API
+key in the `Authorization` header with the `Bearer` prefix:
+
+```bash
+curl \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  https://YOUR_CUBE_CLOUD_HOST/api/v1/deployments
+```
+
+### Error handling
+
+In case of an error, Control Plane API returns a JSON object with an `error` property:
+
+```json
+{
+  "error": "Error message"
+}
+```
+
+### Pagination
+
+Endpoints that return lists support pagination using `offset` and `limit` query
+parameters:
+
+| Parameter | Description |
+| --- | --- |
+| `offset` | Number of items to skip. Default: `0` |
+| `limit` | Maximum number of items to return. Default: `20` |
+
+Paginated responses include a `pagination` object:
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "offset": 0,
+    "limit": 20,
+    "total": 42
+  }
+}
+```
+
+## Reference
+
+### `/api/v1/deployments`
+
+Send a `GET` request to list all [deployments][ref-deployments] accessible to the authenticated user.
+
+Query parameters:
+
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `offset` | Pagination offset | No |
+| `limit` | Pagination limit | No |
+
+Example request:
+
+```bash
+curl \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  "https://YOUR_CUBE_CLOUD_HOST/api/v1/deployments"
+```
+
+Example response:
+
+```json
+{
+  "data": {
+    "deployments": [
+      {
+        "id": "123",
+        "name": "My Deployment",
+        "created_at": "2024-01-15T10:30:00.000Z"
+      }
+    ]
+  },
+  "pagination": {
+    "offset": 0,
+    "limit": 20,
+    "total": 1
+  }
+}
+```
+
+### `/api/v1/deployments/{deployment_id}/environments` {#apiv1deploymentsdeployment_idenvironments}
+
+Send a `GET` request to list [environments][ref-environments] for a specific [deployment][ref-deployments].
+
+Path parameters:
+
+| Parameter | Description |
+| --- | --- |
+| `deployment_id` | The deployment ID |
+
+Query parameters:
+
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `type` | Filter by environment type: `production`, `staging`, or `development` | No |
+| `offset` | Pagination offset | No |
+| `limit` | Pagination limit | No |
+
+Example request:
+
+```bash
+curl \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  "https://YOUR_CUBE_CLOUD_HOST/api/v1/deployments/123/environments"
+```
+
+Example response:
+
+```json
+{
+  "data": {
+    "environments": [
+      {
+        "id": "456",
+        "name": "Production",
+        "type": "production",
+        "api_credentials": {
+          "rest": {
+            "url": "https://example.cubecloud.dev/cubejs-api"
+          },
+          "sql": {
+            "host": "example.sql.cubecloud.dev",
+            "port": 5432
+          }
+        }
+      }
+    ]
+  },
+  "pagination": {
+    "offset": 0,
+    "limit": 20,
+    "total": 1
+  }
+}
+```
+
+### `/api/v1/deployments/{deployment_id}/environments/{environment_id}/tokens-for-meta-sync`
+
+Send a `POST` request to create a JWT token for accessing the
+[Metadata API][ref-metadata-api]. The generated token is scoped specifically
+to metadata endpoints (e.g., `/v1/data-sources`, `/v1/entities`) and cannot
+be used to query data via the [REST (JSON) API][ref-rest-api]. This makes it suitable
+for integrations such as data catalogs and lineage tools that only need to
+read data model metadata.
+
+The [security context][ref-security-context] you provide is embedded in the
+token and controls which parts of the data model are visible, following the
+same multi-tenancy rules as regular API tokens.
+
+The token always carries the `meta` scope. To also read
+[private cubes, views, and members][ref-metadata-api-private], request the
+`meta-private` scope. It is added only for an admin or, on an account that
+enforces [roles and permissions][ref-roles-and-permissions], for a user with the
+`SchemaRead` ([View data model][ref-custom-roles]) permission on the deployment;
+otherwise it is left out rather than refused. Any other scope you request is
+ignored. The `scopes` property of the response lists the scopes the token
+carries, so check it to see whether `meta-private` was granted.
+
+Data catalog integrations call this endpoint with an [API key][ref-api-keys],
+which acts as its owner. So an admin's key gets `meta-private`, and a
+[personal key][ref-personal-api-keys] gets it only if its owner has `SchemaRead`
+on the deployment. The key must be scoped to that deployment or to all
+deployments. The token is issued for the key's owner, so
+[data access policies][ref-dap] hide from it whatever they hide from that user.
+A dedicated user for the integration keeps what the catalog sees independent of
+any one person's access.
+
+Path parameters:
+
+| Parameter | Description |
+| --- | --- |
+| `deployment_id` | The deployment ID |
+| `environment_id` | The environment ID |
+
+Request body:
+
+| Property | Type | Description | Required |
+| --- | --- | --- | --- |
+| `security_context` | `object` | [Security context][ref-security-context] to embed in the token. Controls data model visibility based on your multi-tenancy configuration. | Yes |
+| `scopes` | `string[]` | Additional scopes. Only `meta-private` is honored; see above | No |
+| `expires_in` | `number` | Token expiration time in seconds, at most `3600`. Default: `3600` (1 hour) | No |
+
+Example request:
+
+```bash
+curl \
+  -X POST \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "security_context": {"tenant_id": "acme"},
+    "expires_in": 3600
+  }' \
+  "https://YOUR_CUBE_CLOUD_HOST/api/v1/deployments/123/environments/456/tokens-for-meta-sync"
+```
+
+Example response:
+
+```json
+{
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "expires_at": "2024-01-15T11:30:00.000Z",
+    "scopes": ["meta"]
+  }
+}
+```
+
+
+### `/build/api/v1/deployments/{deployment_id}/branches/staging-environment`
+
+Send a `PUT` request to enable or disable a branch, i.e. to control whether its
+[staging environment][ref-environments-staging] stays always active. Disabled
+(the default), a staging environment is only active while the branch is viewed
+in the Cube UI; enabled, it remains active and accessible regardless of user
+activity, and it is reported by
+[`/api/v1/deployments/{deployment_id}/environments`](#apiv1deploymentsdeployment_idenvironments)
+as a `staging` environment.
+
+Only shared branches can be enabled — personal development branches and the
+production branch are rejected.
+
+<Info>
+
+Note the `/build` prefix: data model and branch endpoints are served by the
+build API.
+
+</Info>
+
+Path parameters:
+
+| Parameter | Description |
+| --- | --- |
+| `deployment_id` | The deployment ID |
+
+Body parameters:
+
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `enabled` | `true` enables the branch, `false` disables it | Yes |
+| `branchName` | Name of the branch to update | One of `branchName` or `branchId` |
+| `branchId` | ID of the branch to update, as returned by `GET /build/api/v1/deployments/{deployment_id}/branches` | One of `branchName` or `branchId` |
+
+Example request:
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"branchName": "staging", "enabled": true}' \
+  "https://YOUR_CUBE_CLOUD_HOST/build/api/v1/deployments/123/branches/staging-environment"
+```
+
+Example response:
+
+```json
+{
+  "data": {
+    "id": 456,
+    "name": "staging",
+    "parentBranch": "main",
+    "lastHash": "9f2c1ab",
+    "isStagingEnvironmentEnabled": true
+  }
+}
+```
+
+The same operation is available in the [CLI][ref-cli] as
+`cube data-model enable-branch` / `cube data-model disable-branch`.
+
+### `/api/v1/deployments/{deployment_id}/versions`
+
+Send a `GET` request to list the Cube versions a deployment can be switched
+to — the same set the Cube Cloud UI's version picker offers: the head of each
+[update channel][ref-update-channels], plus the older versions your account has
+run before.
+
+Example request:
+
+```bash
+curl \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  "https://YOUR_CUBE_CLOUD_HOST/api/v1/deployments/123/versions"
+```
+
+Example response:
+
+```json
+{
+  "data": [
+    {
+      "releaseChannelVersion": "cubejs/cube:v1.7.20",
+      "version": "1.7.20",
+      "releaseChannel": "latest",
+      "isLatestInChannel": true,
+      "isCurrent": true
+    },
+    {
+      "releaseChannelVersion": "cubejs/cube:v1.6.69",
+      "version": "1.6.69",
+      "releaseChannel": "latest",
+      "isLatestInChannel": false,
+      "isCurrent": false
+    }
+  ]
+}
+```
+
+To change the version, send a listed value as `releaseChannelVersion` to
+`PUT /api/v1/deployments/{deployment_id}`. Any of `1.7.20`, `v1.7.20` or
+`cubejs/cube:v1.7.20` is accepted; a version that is not on the list is
+rejected with a `400`. The container image is resolved from the version
+server-side and cannot be set directly.
+
+<Note>
+Leaving `releaseChannelVersion` out and sending only `releaseChannel` moves the
+deployment to that channel's latest version.
+</Note>
+
+The same operation is available in the [CLI][ref-cli] as
+`cube deployments versions`, with `cube deployments update ID
+--release-channel-version 1.7.20` to apply one.
+
+### `/api/v1/audit-logs/export`
+
+Send a `GET` request to export [audit log][ref-audit-log] events as a CSV
+file. This endpoint allows you to programmatically retrieve security-related
+events for compliance reviews, external log aggregation, or integration with
+SIEM tools.
+
+<Info>
+
+Requires [Audit Log][ref-audit-log] to be enabled on the
+[Enterprise plan](https://cube.dev/pricing). The authenticated user
+must have the `AuditLogManage` permission.
+
+</Info>
+
+Query parameters:
+
+| Parameter | Description | Required |
+| --- | --- | --- |
+| `start` | Start of the date range (ISO 8601 format, e.g., `2024-01-01`) | No |
+| `end` | End of the date range (ISO 8601 format, e.g., `2024-01-31`) | No |
+| `search` | Full-text search across event data | No |
+| `eventName` | Filter by event type (e.g., `Logged in`) | No |
+| `userEmail` | Filter by user email | No |
+
+The response is a CSV file streamed as an attachment.
+
+Example request:
+
+```bash
+curl \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -o audit_log.csv \
+  "https://YOUR_CUBE_CLOUD_HOST/api/v1/audit-logs/export?start=2024-01-01&end=2024-01-31"
+```
+
+Example request with filters:
+
+```bash
+curl \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -o audit_log.csv \
+  "https://YOUR_CUBE_CLOUD_HOST/api/v1/audit-logs/export?start=2024-01-01&end=2024-01-31&eventName=Logged+in&userEmail=user@example.com"
+```
+
+### `/api/v1/deployments/{deployment_id}/dashboard-exports`
+
+Request a server-rendered snapshot of a whole published dashboard as PNG or
+PDF — the same rendering the [Download as PNG or PDF][ref-dashboard-download]
+action uses — without driving a browser through the console. A draft that
+has never been published can't be exported. Identify the dashboard with
+either `dashboardId` (numeric) or `dashboardPublicId` (string) — exactly one,
+not both. Requires **manage** access to the dashboard's workbook, the same
+permission the console's whole-dashboard download requires.
+
+By default (`layout: screenshot`) the file captures the dashboard as it is
+laid out on screen. Pass `layout: print` with `format: pdf` —
+`{"dashboardPublicId": "abc123", "format": "pdf", "layout": "print"}` — for
+the dashboard's [print version][ref-print-version] instead: the A4 document
+its **Download print version** menu item produces, with every widget at full
+page width, one below another, every row of each table, and the control
+selections the file renders with stated as one summary line in place of the
+controls. `print` is available for PDF only.
+
+Rendering happens asynchronously, since a capture waits for every widget on
+the dashboard to finish querying: submit a job, poll it until `status` is
+`completed` — or `failed`, whose `error` says why — then download the file.
+The job and its file are dropped at the `expiresAt` the submit returns —
+5 minutes out, or 15 for `layout: print`, whose capture of a long table can
+take minutes — so download before then or submit again. A print version
+larger than the export size limit ends `failed`, its `error` asking you to
+narrow the dashboard's filters. Only the identity that submitted a job can
+poll or download it.
+
+```bash
+# 1. Submit the export
+curl -X POST \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"dashboardPublicId": "abc123", "format": "pdf"}' \
+  "https://YOUR_CUBE_CLOUD_HOST/api/v1/deployments/123/dashboard-exports"
+# -> { "jobId": "...", "expiresAt": "..." }
+
+# 2. Poll until it's done
+curl \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  "https://YOUR_CUBE_CLOUD_HOST/api/v1/deployments/123/dashboard-exports/JOB_ID"
+
+# 3. Download the file
+curl \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -o dashboard.pdf \
+  "https://YOUR_CUBE_CLOUD_HOST/api/v1/deployments/123/dashboard-exports/JOB_ID/download"
+```
+
+An account administrator can also render the dashboard as if a specific other
+user opened it — `renderAs` a console user or an embed user — so the file
+reflects that person's own row-level security. An embed subject that doesn't
+exist yet is provisioned by the call; the `groups`/`userAttributes`/
+`securityContext` passed with it apply to that render only, never to the
+user's stored context. This is meant for scheduled, per-recipient reports:
+one API key produces a correctly-scoped file per person, in either layout,
+instead of one key per person.
+
+Submitting returns `400` for a request that supplies both ids or neither, or
+`layout: print` with `format: png`, `404` for a dashboard that doesn't belong
+to the deployment or a deactivated console subject, and `403` when the account
+has data downloads restricted (not bypassed for an on-behalf-of export, unlike
+a built-in scheduled notification) or when an embed subject's tenant doesn't
+have the dashboard's workbook shared with it. It returns `429` when too many
+exports are already in flight for the identity being rendered as, so fan out
+per-recipient reports with a bounded number of jobs open at a time. See the
+[API reference][ref-api-reference] for the full request and response schema.
+
+[ref-dashboard-download]: /docs/explore-analyze/dashboards#download-as-png-or-pdf
+[ref-print-version]: /docs/explore-analyze/dashboards#print-version
+[ref-api-reference]: /api-reference/dashboard-exports/export-a-dashboard-as-png-or-pdf
+
+[ref-core-data-apis]: /reference/core-data-apis
+[ref-rest-api]: /reference/core-data-apis/rest-api
+[ref-metadata-api]: /reference/core-data-apis/rest-api/reference#metadata-api
+[ref-metadata-api-private]: /reference/core-data-apis/rest-api/reference#private-cubes-and-members
+[ref-custom-roles]: /admin/users-and-permissions/custom-roles
+[ref-deployments]: /admin/deployment
+[ref-environments]: /admin/deployment/environments
+[ref-environments-staging]: /admin/deployment/environments#staging-environments
+[ref-cli]: /reference/cli
+[ref-api-keys]: /admin/account-billing/api-keys
+[ref-personal-api-keys]: /admin/account-billing/api-keys#personal-api-keys
+[ref-roles-and-permissions]: /admin/users-and-permissions/roles-and-permissions
+[ref-dap]: /docs/data-modeling/data-access-policies
+[ref-security-context]: /docs/data-modeling/access-control/context
+[ref-audit-log]: /admin/monitoring/audit-log
+[ref-update-channels]: /admin/deployment#update-channels

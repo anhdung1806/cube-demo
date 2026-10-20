@@ -1,0 +1,11 @@
+{
+  "measures": [
+    "Orders.revenue"
+  ],
+  "dimensions": [
+    "Products.category"
+  ],
+  "order": {
+    "Products.category": "asc"
+  }
+}
