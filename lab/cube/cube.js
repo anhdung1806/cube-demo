@@ -1,4 +1,11 @@
 module.exports = {
+  contextToAppId: ({ securityContext }) => {
+    if (!securityContext || securityContext.tenantId == null) return 'tenant-preview';
+    return `tenant-${securityContext.tenantId}`;
+  },
+  scheduledRefreshContexts: () => [101, 202, 303].map((tenantId) => ({
+    securityContext: { tenantId }
+  })),
   queryRewrite: (query, { securityContext }) => {
     const tenantId = securityContext && securityContext.tenantId;
     const referencedMembers = [
@@ -17,7 +24,7 @@ module.exports = {
     };
     addFilterMembers(query.filters);
 
-    const tenantCubes = new Set(['Orders', 'Customers', 'Events', 'CustomerAttributes', 'OrderStatusHistory', 'CashFlows']);
+    const tenantCubes = new Set(['Orders', 'Customers', 'Events', 'CustomerAttributes', 'OrderStatusHistory', 'CashFlows', 'TenantSales']);
     const queriedCubes = new Set(referencedMembers
       .filter((member) => typeof member === 'string' && member.includes('.'))
       .map((member) => member.split('.')[0])

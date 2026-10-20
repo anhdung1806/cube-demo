@@ -1,6 +1,6 @@
 # Cube + Data360: lab thực hành
 
-Lab chạy Cube, PostgreSQL và trang gọi API bằng Docker Compose, theo cách tổ chức `examples/recipes`: cấu hình Cube ở `cube/cube.js`, mỗi cube nghiệp vụ là một file schema, dữ liệu khởi tạo ở `postgres/init.sql`. Bộ bảng dùng chung giả lập một nền tảng B2B đa tenant gồm đơn hàng, khách hàng và sản phẩm; các bài học cùng query trên dữ liệu này.
+Lab chạy Cube, PostgreSQL và trang gọi API bằng Docker Compose, theo cách tổ chức `examples/recipes`: cấu hình Cube ở `cube/cube.js`, mỗi cube nghiệp vụ là một file schema, dữ liệu khởi tạo ở `postgres/init.sql`. Cube Store lưu metastore và pre-aggregations trong volume ghi được riêng, tách khỏi thư mục cấu hình chỉ đọc. Bộ bảng dùng chung giả lập một nền tảng B2B đa tenant gồm đơn hàng, khách hàng và sản phẩm; các bài học cùng query trên dữ liệu này.
 
 ## Chạy
 
@@ -9,7 +9,7 @@ cd lab
 docker compose up -d
 ```
 
-Mở trang thử nghiệm tại http://localhost:8080, Cube Playground tại http://localhost:4000. PostgreSQL nguồn có thể xem tại `localhost:5433` (cube / cube-local-only). Dừng bằng `docker compose down`; xóa cả dữ liệu volume bằng `docker compose down -v`.
+Mở trang thử nghiệm tại http://localhost:8080, Cube Playground tại http://localhost:4000. Trang web có REST API và SQL API HTTP ở tab bên trái; kết quả hiển thị dạng bảng, JSON hoặc SQL nguồn đã sinh. SQL client như `psql` cũng có thể kết nối Cube qua PostgreSQL protocol tại cổng `15432`. PostgreSQL nguồn có thể xem tại `localhost:5433` (cube / cube-local-only). Dừng bằng `docker compose down`; xóa cả dữ liệu volume bằng `docker compose down -v`.
 
 ## Bài học
 

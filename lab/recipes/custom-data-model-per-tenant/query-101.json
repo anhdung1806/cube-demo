@@ -1,0 +1,4 @@
+{
+  "measures": ["TenantSales.revenue", "TenantSales.averageOrderValue"],
+  "dimensions": ["TenantSales.status"]
+}

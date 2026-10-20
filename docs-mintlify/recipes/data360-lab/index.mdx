@@ -37,7 +37,7 @@ Trang demo gửi JSON query tới `/cubejs-api/v1/load`. Một query mô tả me
 
 ## 5. SQL API
 
-Cube SQL API nói giao thức PostgreSQL trên cổng `15432`, để SQL client kết nối và truy vấn semantic model. Nó khác PostgreSQL nguồn ở cổng `5433`. Dùng `psql` hoặc client tương thích PostgreSQL để kết nối. Truy vấn SQL đi qua mô hình Cube, vì vậy tên bảng/cột SQL có thể không trùng bảng vật lý; xem schema được Cube công bố trong SQL client.
+Cube SQL API hỗ trợ giao thức PostgreSQL trên cổng `15432` và HTTP JSON tại endpoint `/cubejs-api/v1/cubesql`. Trang lab gửi SQL qua HTTP; SQL client như `psql` có thể kết nối vào cổng PostgreSQL của Cube. Cả hai đều khác PostgreSQL nguồn ở cổng `5433`. Truy vấn chạy trên mô hình Cube, không phải bảng vật lý; tên bảng là tên cube/view và cột là member trong semantic model.
 
 ## 6. Bảo mật đa tenant
 
