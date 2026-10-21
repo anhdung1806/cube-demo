@@ -1,18 +1,6 @@
 {
-  "measures": [
-    "Orders.revenue",
-    "Orders.count"
-  ],
-  "dimensions": [
-    "Customers.segment"
-  ],
-  "timeDimensions": [
-    {
-      "dimension": "Orders.orderedAt",
-      "granularity": "month"
-    }
-  ],
-  "order": {
-    "Orders.orderedAt": "asc"
-  }
+  "measures": ["GrossSales.grossSalesCurrent", "GrossSales.grossSalesPrior", "GrossSales.grossSalesChange", "GrossSales.grossSalesGrowthPercentage"],
+  "dimensions": ["GrossSales.growthWindow"],
+  "timeDimensions": [{"dimension": "GrossSales.month", "dateRange": ["2024-12-01", "2024-12-31"]}],
+  "filters": [{"member": "GrossSales.growthWindow", "operator": "equals", "values": ["9m"]}]
 }

@@ -1,14 +1,15 @@
 {
   "measures": [
-    "Events.activeCustomers"
+    "Events.dailyActiveCustomers",
+    "Events.weeklyActiveCustomers",
+    "Events.monthlyActiveCustomers",
+    "Events.wauToMau"
   ],
   "timeDimensions": [
     {
       "dimension": "Events.occurredAt",
-      "granularity": "month"
+      "dateRange": ["2025-03-27", "2025-03-27"],
+      "granularity": "day"
     }
-  ],
-  "order": {
-    "Events.occurredAt": "asc"
-  }
+  ]
 }

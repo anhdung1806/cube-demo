@@ -1,29 +1,32 @@
 # Lab: Daily, Weekly, Monthly Active Users (DAU, WAU, MAU)
 
-**Hướng dẫn tương ứng:** [Daily, Weekly, Monthly Active Users (DAU, WAU, MAU)](/recipes/data-modeling/active-users)  
-**Dữ liệu dùng chung:** `orders`, `customers`, `products` và `events` trong PostgreSQL của lab.
+**Tài liệu gốc:** [Daily, Weekly, Monthly Active Users](/recipes/data-modeling/active-users)  
+**Model thực hành:** [`Events.js`](../../cube/schema/Events.js)  
+**Query nạp sẵn:** [`query.json`](query.json)
 
-## Tình huống thực tế
+## Tình huống
 
-Đội sản phẩm muốn biết bao nhiêu khách hàng doanh nghiệp hoạt động theo ngày, tuần và tháng.
+Đội sản phẩm Data360 muốn biết có bao nhiêu khách hàng doanh nghiệp đã tương tác với sản phẩm trong ngày gần nhất, 7 ngày gần nhất và 30 ngày gần nhất. Số sự kiện không đồng nghĩa với số khách hàng: một khách có thể tạo nhiều sự kiện.
 
-## Mục tiêu học
+## Dữ liệu
 
-Đếm khách duy nhất có sự kiện trong từng khoảng thời gian; không nhầm số sự kiện với số người dùng.
+Bảng `events` có một dòng cho mỗi tương tác, gồm `customer_id`, loại sự kiện, phiên và thời điểm. Ngày được chọn là 27/03/2025. Trong seed, một khách hàng hoạt động ngày đó; hai khách hoạt động trong 7 ngày; ba khách hoạt động trong 30 ngày. Query có JWT tenant như giao diện; model tự thêm điều kiện tenant.
 
 ## Làm bài
 
-1. Chạy stack một lần từ thư mục `lab`: `docker compose up -d`.
-2. Mở `http://localhost:8080`, chọn **Daily, Weekly, Monthly Active Users (DAU, WAU, MAU)**. Trang sẽ nạp query mẫu từ `lab/recipes/active-users/query.json`.
-3. Gọi REST API với tenant 101, sau đó tenant 202. Xác định metric, dimension, time dimension và filter tenant trong kết quả.
-4. Chạy Events.activeCustomers theo tháng; đổi granularity ngày/tuần theo hướng dẫn.
-5. Mở hướng dẫn tương ứng ở đầu trang để áp dụng phần cấu hình/schema đầy đủ. Các mẫu nâng cao nằm cạnh dữ liệu dùng chung trong `lab/cube/schema`.
+1. Chạy Compose trong thư mục `lab`, mở `http://localhost:8080`, chọn bài này.
+2. Chạy query mẫu. Kết quả mong đợi: DAU `1`, WAU `2`, MAU `3`, WAU/MAU `0.6667` (xấp xỉ 66.67%).
+3. Đổi ngày trong `dateRange` thành `2025-03-03`. Chạy lại để thấy cửa sổ tính theo ngày được chọn thay đổi.
+4. Mở `Events.js` và đối chiếu ba `rollingWindow`: chỉ khác độ dài cửa sổ; tất cả đều đếm `customer_id` duy nhất.
 
-## Tự kiểm tra
+## Đọc query từng phần
 
-- Query đang tính trên một dòng mỗi đơn, khách hàng hay sự kiện?
-- Nếu join thêm cube, có làm nhân đôi doanh thu không?
-- Tenant khác có thể nhìn thấy kết quả này không? Kiểm tra `queryRewrite` ở `lab/cube/cube.js`.
-- Kỹ thuật này tác động thế nào đến độ mới, thời gian phản hồi và chi phí khi dữ liệu tăng?
+- `measures` yêu cầu DAU, WAU, MAU và tỷ lệ WAU/MAU. Các measure được định nghĩa trong Cube, nên client không tự tính lại từ số sự kiện.
+- `timeDimensions.dimension` chọn trục thời gian `Events.occurredAt`.
+- `dateRange` chỉ định ngày cần trả kết quả. Rolling window sẽ đọc lịch sử trước ngày đó để tính khoảng lùi tương ứng.
+- `granularity: day` yêu cầu một điểm theo ngày. Với nhiều ngày trong khoảng, Cube trả một hàng cho mỗi ngày.
+- `wauToMau` chia số khách hoạt động 7 ngày cho số khách hoạt động 30 ngày; `NULLIF` bảo vệ mẫu số bằng 0.
 
-> Dữ liệu lab là dữ liệu giả lập nhỏ để kiểm tra logic. Bài về dịch vụ ngoài (như dbt, SSL, database thứ hai hoặc Chat API) dùng query này làm nền và thực hành phần tích hợp theo hướng dẫn; Compose không giả lập các dịch vụ đó.
+## Điểm cần phân biệt
+
+Bài gốc định nghĩa rolling windows cố định: 1, 7 và 30 ngày. Người dùng không gửi độ dài bất kỳ vào query. Nếu cần dropdown chọn độ dài lúc chạy, xem bài [Configurable rolling windows](/recipes/data-modeling/dynamic-rolling-windows). Dữ liệu seed nhỏ nên mục đích là kiểm tra logic và grain, không đại diện cho tải production.

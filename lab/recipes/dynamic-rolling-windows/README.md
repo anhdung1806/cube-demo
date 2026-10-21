@@ -1,29 +1,32 @@
 # Lab: Configurable rolling windows and time shifts
 
-**Hướng dẫn tương ứng:** [Configurable rolling windows and time shifts](/recipes/data-modeling/dynamic-rolling-windows)  
-**Dữ liệu dùng chung:** `orders`, `customers`, `products` trong PostgreSQL của lab.
+**Tài liệu gốc:** [Configurable rolling windows and time shifts](/recipes/data-modeling/dynamic-rolling-windows)  
+**Model thực hành:** [`GrossSales.js`](../../cube/schema/GrossSales.js)  
+**Query nạp sẵn:** [`query.json`](query.json)
 
-## Tình huống thực tế
+## Tình huống
 
-Người dùng muốn chọn cửa sổ 7/30/90 ngày mà không cần tạo ba metric riêng.
+Dashboard Data360 cần cho người quản lý chọn cửa sổ 3, 6, 9 hoặc 12 tháng để xem doanh số hiện tại so với đúng cửa sổ liền trước. Ta không muốn tạo bốn dashboard hay để client tự ghép SQL.
 
-## Mục tiêu học
+## Dữ liệu
 
-Nhận interval/time shift ở query-time có kiểm soát và thiết kế fallback hợp lệ.
+Cube `GrossSales` dùng 24 điểm doanh số tổng hợp theo tháng, từ tháng 1/2023 đến tháng 12/2024. Mỗi tháng tăng 10 đơn vị, bắt đầu ở 100. Đây là chuỗi giả lập nhỏ, độc lập với bảng đơn hàng; nhờ vậy có đủ lịch sử để quan sát rolling window và time shift. Query chọn tháng 12/2024 và cửa sổ `9m`.
 
-## Làm bài
+## Thực hành
 
-1. Chạy stack một lần từ thư mục `lab`: `docker compose up -d`.
-2. Mở `http://localhost:8080`, chọn **Configurable rolling windows and time shifts**. Trang sẽ nạp query mẫu từ `lab/recipes/dynamic-rolling-windows/query.json`.
-3. Gọi REST API với tenant 101, sau đó tenant 202. Xác định metric, dimension, time dimension và filter tenant trong kết quả.
-4. Query mẫu revenue theo tháng; làm theo switch dimension trong bài để chọn cửa sổ.
-5. Mở hướng dẫn tương ứng ở đầu trang để áp dụng phần cấu hình/schema đầy đủ. Các mẫu nâng cao nằm cạnh dữ liệu dùng chung trong `lab/cube/schema`.
+1. Chạy `docker compose up -d` trong thư mục `lab`, mở `http://localhost:8080` và chọn bài này.
+2. Trong tab REST API, xem JSON đã nạp. Bấm **Chạy REST**. Với cửa sổ 9 tháng, kết quả mong đợi là hiện tại `2610`, kỳ trước `1800`, chênh lệch `810`, tăng trưởng `45%`.
+3. Đổi `filters.values` từ `9m` thành `3m`, `6m`, rồi `12m`; mỗi lần bấm chạy để xem cùng một bộ measure đổi theo lựa chọn.
+4. Xóa filter nhưng giữ dimension `GrossSales.growthWindow` trong query để xem các cửa sổ cạnh nhau.
 
-## Tự kiểm tra
+## Đọc query theo từng phần
 
-- Query đang tính trên một dòng mỗi đơn, khách hàng hay sự kiện?
-- Nếu join thêm cube, có làm nhân đôi doanh thu không?
-- Tenant khác có thể nhìn thấy kết quả này không? Kiểm tra `queryRewrite` ở `lab/cube/cube.js`.
-- Kỹ thuật này tác động thế nào đến độ mới, thời gian phản hồi và chi phí khi dữ liệu tăng?
+- `measures` yêu cầu bốn kết quả đã định nghĩa trong model: tổng hiện tại, tổng cửa sổ liền trước, chênh lệch và phần trăm thay đổi. Client không truyền số tháng vào công thức.
+- `dimensions` phải có `GrossSales.growthWindow`: đây là switch dimension cho phép các measure `case` biết cần dispatch nhánh nào.
+- `timeDimensions` giới hạn điểm cần tính ở tháng 12/2024. Dùng time dimension thay vì filter thường để Cube nhận biết đây là truy vấn chuỗi thời gian.
+- `filters` chọn `9m`. Nó lọc giá trị của switch dimension, không thay đổi định nghĩa measure.
+- Trong model, mỗi rolling measure tính tổng trailing N tháng; measure `priorR...` dịch cùng phép tính lùi N tháng. Các measure `case` chọn cặp tương ứng, rồi measure change/growth tính hiệu và tỷ lệ.
 
-> Dữ liệu lab là dữ liệu giả lập nhỏ để kiểm tra logic. Bài về dịch vụ ngoài (như dbt, SSL, database thứ hai hoặc Chat API) dùng query này làm nền và thực hành phần tích hợp theo hướng dẫn; Compose không giả lập các dịch vụ đó.
+## Giới hạn cần nhớ
+
+`rollingWindow` và `timeShift` thuộc định nghĩa measure, không phải tham số tùy ý gửi trong query. Switch chỉ chọn trong danh sách được cho phép. Tài liệu gốc cũng yêu cầu `case` có nhánh `else` và query phải gồm switch dimension. Ví dụ này dùng chuỗi tổng hợp, không phải số tiền trong bảng `orders`.

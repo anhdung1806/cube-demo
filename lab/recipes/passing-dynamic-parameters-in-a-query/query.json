@@ -1,18 +1,4 @@
 {
-  "measures": [
-    "Orders.revenue",
-    "Orders.count"
-  ],
-  "dimensions": [
-    "Customers.segment"
-  ],
-  "timeDimensions": [
-    {
-      "dimension": "Orders.orderedAt",
-      "granularity": "month"
-    }
-  ],
-  "order": {
-    "Orders.orderedAt": "asc"
-  }
+  "measures": ["ProvinceShare.totalBusinesses", "ProvinceShare.businessesInSelectedProvince", "ProvinceShare.provinceShare"],
+  "filters": [{"member": "ProvinceShare.provinceFilter", "operator": "equals", "values": ["Hà Nội"]}]
 }
